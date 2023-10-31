@@ -50,6 +50,8 @@ export interface FeedbackColumnState {
   isCarouselHidden: boolean;
 }
 
+export const EmptyFeedbackId: string = "emptyFeedbackItem";
+
 export default class FeedbackColumn extends React.Component<FeedbackColumnProps, FeedbackColumnState> {
   private createFeedbackButton: IButton;
 
@@ -73,7 +75,7 @@ export default class FeedbackColumn extends React.Component<FeedbackColumnProps,
     if (this.props.workflowPhase !== WorkflowPhase.Collect)
       return;
 
-    const item = this.props.columnItems.find((x) => x.feedbackItem.id === 'emptyFeedbackItem');
+    const item = this.props.columnItems.find((x) => x.feedbackItem.id === EmptyFeedbackId);
     if (item) {
       // Don't create another empty feedback item if one already exists.
       return;
@@ -85,8 +87,8 @@ export default class FeedbackColumn extends React.Component<FeedbackColumnProps,
       columnId: this.props.columnId,
       originalColumnId: this.props.columnId,
       createdBy: this.props.isBoardAnonymous ? null : userIdentity,
-      createdDate: new Date(Date.now()),
-      id: 'emptyFeedbackItem',
+      createdDate: new Date('1999-01-01'), // Create an old date so it shows at the beginning of the column list until it's saved
+      id: EmptyFeedbackId,
       title: '',
       voteCollection: {},
       upvotes: 0,
@@ -201,7 +203,8 @@ export default class FeedbackColumn extends React.Component<FeedbackColumnProps,
       groupIds: columnItem.feedbackItem.childFeedbackItemIds ?? [],
       isGroupedCarouselItem: columnItem.feedbackItem.isGroupedCarouselItem,
       isShowingGroupedChildrenTitles: false,
-      isFocusModalHidden: true
+      isFocusModalHidden: true,
+      displayId: columnItem.feedbackItem.displayId
     }
   }
 
@@ -211,6 +214,8 @@ export default class FeedbackColumn extends React.Component<FeedbackColumnProps,
 
     if (this.props.workflowPhase === WorkflowPhase.Act) {
       columnItems = columnItems.sort((item1, item2) => item2.feedbackItem.upvotes - item1.feedbackItem.upvotes);
+    } else {
+      columnItems = columnItems.sort((item1, item2) => item1.feedbackItem.createdDate.getTime() - item2.feedbackItem.createdDate.getTime());
     }
 
     return columnItems

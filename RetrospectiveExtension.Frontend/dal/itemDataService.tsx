@@ -18,7 +18,7 @@ class ItemDataService {
    * Create an item with given title and column id in the board.
    */
   public createItemForBoard = async (
-    boardId: string, title: string, columnId: string, isAnonymous: boolean = true): Promise<IFeedbackItemDocument> => {
+    boardId: string, title: string, columnId: string, displayId: number, isAnonymous: boolean = true, ): Promise<IFeedbackItemDocument> => {
     const itemId: string = uuid();
     const userIdentity = getUserIdentity();
 
@@ -37,7 +37,8 @@ class ItemDataService {
       timerstate: false,
       timerId: null,
       groupIds: [],
-      isGroupedCarouselItem: false
+      isGroupedCarouselItem: false,
+      displayId: displayId
     };
 
     const createdItem: IFeedbackItemDocument =

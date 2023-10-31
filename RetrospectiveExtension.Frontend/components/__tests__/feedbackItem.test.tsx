@@ -1,8 +1,8 @@
 import React from 'react';
 import moment from 'moment';
 import { shallow } from 'enzyme';
-import FeedbackItem, { IFeedbackItemProps } from '../feedbackItem';
-import FeedbackColumn from '../feedbackColumn';
+import FeedbackItem, { FeedbackItemHelper, IFeedbackItemProps } from '../feedbackItem';
+import FeedbackColumn, { EmptyFeedbackId } from '../feedbackColumn';
 import EditableDocumentCardTitle from '../editableDocumentCardTitle';
 import Dialog from 'office-ui-fabric-react/lib/Dialog';
 import { DefaultButton } from 'office-ui-fabric-react';
@@ -22,6 +22,8 @@ import {
   testGroupColumnsObj,
   testGroupColumnUuidTwo
 } from '../__mocks__/mocked_components/mockedFeedbackColumn';
+import { IColumn } from '../feedbackBoard';
+import { IFeedbackItemDocument } from '../../interfaces/feedback';
 
 // Base render constants, these may change if the FeedbackItem component is changed.
 const childDialogCount = 5;
@@ -71,7 +73,7 @@ describe('Feedback Item', () => {
       child.prop("className") === "card-id").text()).
       toEqual(`#${testColumns[testColumnUuidOne].columnItems.findIndex(
         (columnItem: { feedbackItem: { id: string; }; }) =>
-          columnItem.feedbackItem.id === testFeedbackItem.id)}`);
+          columnItem.feedbackItem.id === testFeedbackItem.id) + 1}`);
 
     expect(component.findWhere((child) =>
       child.type() === EditableDocumentCardTitle).prop("title")).
@@ -140,4 +142,165 @@ describe('Feedback Item', () => {
       expect(originalColumn.text()).toEqual(`Original Column: ${testGroupColumnsObj[testGroupColumnUuidTwo].columnProperties.title}`);
     })
   });
+
+  describe('FeedbackItemHelper.getNextDisplayId', () => {
+
+    test('should return 1 when there are not items', () => {
+      const columns: { [id: string]: IColumn} = {
+        '123': {
+          columnProperties: null,
+          columnItems: []
+        }
+      }
+
+      const nextNumber: number = FeedbackItemHelper.getNextDisplayId(columns);
+      expect(nextNumber).toEqual(1);
+    })
+
+    test('should return indexed next number', () => {
+      const columns: { [id: string]: IColumn} = {
+        '1': {
+          columnProperties: null,
+          columnItems: [
+            {
+              feedbackItem: {
+                ...mockFeedbackItem()
+              },
+              actionItems: []
+            }
+          ]
+        },
+        '2': {
+          columnProperties: null,
+          columnItems: [
+            {
+              feedbackItem: {
+                ...mockFeedbackItem()
+              },
+              actionItems: []
+            }
+          ]
+        }
+      }
+
+      const nextNumber: number = FeedbackItemHelper.getNextDisplayId(columns);
+      expect(nextNumber).toEqual(3);
+    })
+
+    test('should return displayId next number', () => {
+      const columns: { [id: string]: IColumn} = {
+        '1': {
+          columnProperties: null,
+          columnItems: [
+            {
+              feedbackItem: {
+                ...mockFeedbackItem(),
+                displayId: 1
+              },
+              actionItems: []
+            }
+          ]
+        },
+        '2': {
+          columnProperties: null,
+          columnItems: [
+            {
+              feedbackItem: {
+                ...mockFeedbackItem(),
+                displayId: 3
+              },
+              actionItems: []
+            }
+          ]
+        }
+      }
+
+      const nextNumber: number = FeedbackItemHelper.getNextDisplayId(columns);
+      expect(nextNumber).toEqual(4);
+    })
+
+    test('should return displayId next number with missing displayId', () => {
+      const columns: { [id: string]: IColumn} = {
+        '1': {
+          columnProperties: null,
+          columnItems: [
+            {
+              feedbackItem: {
+                ...mockFeedbackItem()
+              },
+              actionItems: []
+            }
+          ]
+        },
+        '2': {
+          columnProperties: null,
+          columnItems: [
+            {
+              feedbackItem: {
+                ...mockFeedbackItem(),
+                displayId: 1
+              },
+              actionItems: []
+            }
+          ]
+        }
+      }
+
+      const nextNumber: number = FeedbackItemHelper.getNextDisplayId(columns);
+      expect(nextNumber).toEqual(2);
+    })
+
+    test('should return displayId next number ignoring emptyFeedbackItem items', () => {
+      const columns: { [id: string]: IColumn} = {
+        '1': {
+          columnProperties: null,
+          columnItems: [
+            {
+              feedbackItem: {
+                ...mockFeedbackItem(),
+                id: EmptyFeedbackId,
+                displayId: 2,
+              },
+              actionItems: []
+            }
+          ]
+        },
+        '2': {
+          columnProperties: null,
+          columnItems: [
+            {
+              feedbackItem: {
+                ...mockFeedbackItem(),
+                displayId: 1
+              },
+              actionItems: []
+            }
+          ]
+        }
+      }
+
+      const nextNumber: number = FeedbackItemHelper.getNextDisplayId(columns);
+      expect(nextNumber).toEqual(2);
+    })
+  })
 });
+
+function mockFeedbackItem(): IFeedbackItemDocument {
+  return {
+    id: "",
+    boardId: '',
+    title: '',
+    columnId: '',
+    originalColumnId: '',
+    upvotes: 0,
+    voteCollection: {},
+    createdDate: null,
+    userIdRef: '',
+    timerSecs: 0,
+    timerstate: false,
+    timerId: null,
+    groupIds: [],
+    isGroupedCarouselItem: false,
+    displayId: 0
+  }
+}

@@ -67,4 +67,9 @@ export interface IFeedbackItemDocument {
   timerId: any;
   groupIds: string[];
   isGroupedCarouselItem: boolean;
+  /**
+   * Unique numerical value, that gets displayed on a card, representing a
+   * unique identifier for the board.
+   */
+  displayId?: number;
 }

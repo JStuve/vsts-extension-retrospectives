@@ -16,7 +16,7 @@ import { reflectBackendService } from '../dal/reflectBackendService';
 import { WebApiTeam } from 'azure-devops-extension-api/Core';
 import { IColumn, IColumnItem } from './feedbackBoard';
 import { SearchBox } from 'office-ui-fabric-react/lib/SearchBox';
-import { FeedbackColumnProps } from './feedbackColumn';
+import { EmptyFeedbackId, FeedbackColumnProps } from './feedbackColumn';
 import { getUserIdentity } from '../utilities/userIdentityHelper';
 import { withAITracking } from '@microsoft/applicationinsights-react-js';
 import { reactPlugin } from '../utilities/telemetryClient';
@@ -61,6 +61,7 @@ export interface IFeedbackItemProps {
   groupIds: string[];
   isShowingGroupedChildrenTitles: boolean;
   isFocusModalHidden: boolean;
+  displayId: number;
   onVoteCasted: () => void;
 
   addFeedbackItems: (
@@ -494,8 +495,9 @@ class FeedbackItem extends React.Component<IFeedbackItemProps, IFeedbackItemStat
     }
 
     if (newlyCreated) {
+      const displayId: number = FeedbackItemHelper.getNextDisplayId(this.props.columns);
       const newFeedbackItem = await itemDataService.createItemForBoard(
-        this.props.boardId, newTitle, this.props.columnId, !this.props.createdBy);
+        this.props.boardId, newTitle, this.props.columnId, displayId, !this.props.createdBy);
       // TODO (enpolat) : appInsightsClient.trackEvent(TelemetryEvents.FeedbackItemCreated);
 
       // Replace empty card UI with populated feedback item
@@ -855,7 +857,10 @@ class FeedbackItem extends React.Component<IFeedbackItemProps, IFeedbackItemStat
                 }
               </div>
               {this.feedbackCreationInformationContent()}
-              <div className="card-id">#{this.props.columns[this.props.columnId].columnItems.findIndex((columnItem) => columnItem.feedbackItem.id === this.props.id)}</div>
+              <div className="card-id">{ this.props.id === EmptyFeedbackId
+                ? ''
+                : '#' + this.props.displayId ?? (this.props.columns[this.props.columnId].columnItems.findIndex((columnItem) => columnItem.feedbackItem.id === this.props.id) + 1)
+              }</div>
             </div>
             <div className="card-action-item-part">
               {showAddActionItem &&
@@ -1019,6 +1024,7 @@ class FeedbackItem extends React.Component<IFeedbackItemProps, IFeedbackItemStat
                 isGroupedCarouselItem: searchItem.isGroupedCarouselItem,
                 isShowingGroupedChildrenTitles: false,
                 isFocusModalHidden: true,
+                displayId: searchItem.displayId,
                 onVoteCasted: this.props.onVoteCasted,
                 addFeedbackItems: this.props.addFeedbackItems,
                 removeFeedbackItemFromColumn: this.props.removeFeedbackItemFromColumn,
@@ -1080,6 +1086,24 @@ export class FeedbackItemHelper {
     // TODO (enpolat) : appInsightsClient.trackEvent(TelemetryEvents.FeedbackItemGrouped);
 
     // TODO: Inform user when not all updates are successful due to race conditions.
+  }
+
+  public static getNextDisplayId(columns: { [id: string]: IColumn}) {
+    let columnItems: IColumnItem[] = ([].concat(...Object.values(columns).map(c => c.columnItems))).filter(c => c.feedbackItem.id !== 'emptyFeedbackItem');
+
+    if((columnItems?.length ?? 0) === 0) {
+      return 1;
+    }
+
+    columnItems = columnItems.sort((item1, item2) => item2.feedbackItem.displayId - item1.feedbackItem.displayId);
+
+    const highestOrderedItem: IColumnItem = columnItems[0];
+
+    if(highestOrderedItem?.feedbackItem?.displayId > 0) {
+      return ++highestOrderedItem.feedbackItem.displayId;
+    } else {
+      return ++columnItems.length
+    }
   }
 }
 

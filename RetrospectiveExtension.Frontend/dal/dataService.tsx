@@ -1,6 +1,7 @@
 import { getAccessToken, getExtensionContext, getService } from 'azure-devops-extension-sdk';
 import { CommonServiceIds, IExtensionDataManager, IExtensionDataService } from 'azure-devops-extension-api';
 import { appInsights } from '../utilities/telemetryClient';
+import { EmptyFeedbackId } from '../components/feedbackColumn';
 
 let extensionDataManager: IExtensionDataManager;
 
@@ -44,7 +45,7 @@ export async function readDocuments<T>(
  * Read a specific user/account scoped document.
  */
 export async function readDocument<T>(collectionName: string, id: string, isPrivate?: boolean): Promise<T> {
-  if (id === "emptyFeedbackItem") {
+  if (id === EmptyFeedbackId) {
     return undefined;
   }
   const dataService: IExtensionDataManager = await getDataService();
